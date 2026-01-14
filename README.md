@@ -1,0 +1,1 @@
+Go api for hlquery.
