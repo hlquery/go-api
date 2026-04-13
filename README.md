@@ -2,10 +2,18 @@
   <img src="https://docs.hlquery.com/img/hlquery/2.png" alt="hlquery logo" width="200">
 </div>
 
+<div align="center">
 
-# hlquery Go API Client
+**A clean, idiomatic Go client library for hlquery, designed with a familiar and intuitive API structure.**
 
-A clean, idiomatic Go client library for hlquery, designed with a familiar and intuitive API structure.
+[![Twitter Follow](https://img.shields.io/twitter/url/https/x.com/hlquery.svg?style=social&label=Follow%20%40hlquery)](https://x.com/hlquery)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/go-api)](https://github.com/hlquery/go-api/pulse)
+[![GitHub stars](https://img.shields.io/github/stars/hlquery/go-api?style=social)](https://github.com/hlquery/go-api/stargazers)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
+[Documentation](https://docs.hlquery.com) • [hlquery](https://github.com/hlquery/hlquery) • [Discord](https://discord.hlquery.com)
+
+</div>
 
 ## Features
 
@@ -80,6 +88,37 @@ client.SetAuthToken("your_token_here", "bearer")
 
 // Method 3: Use X-API-Key
 client.SetAuthToken("your_token_here", "api-key")
+```
+
+### Reduce Text Example
+
+If the `ai_search` module is enabled, you can call it with `ExecuteRequest` and a query string:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "net/url"
+
+    hlquery "github.com/hlquery/go-api"
+)
+
+func main() {
+    client := hlquery.NewClient("http://localhost:9200")
+
+    path := "/modules/ai_search/talk?q=" +
+        url.QueryEscape("summarize onboarding guide in docs") +
+        "&run=true"
+
+    summary, err := client.ExecuteRequest("GET", path, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println(summary.Body)
+}
 ```
 
 ## API Reference
