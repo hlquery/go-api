@@ -6,14 +6,14 @@
 
 **A clean, idiomatic Go client library for hlquery, designed with a familiar and intuitive API structure.**
 
-[![Twitter Follow](https://img.shields.io/twitter/url/https/x.com/hlquery.svg?style=social&label=Follow%20%40hlquery)](https://x.com/hlquery)
-[![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/go-api)](https://github.com/hlquery/go-api/pulse)
-[![GitHub stars](https://img.shields.io/github/stars/hlquery/go-api?style=social)](https://github.com/hlquery/go-api/stargazers)
+[![Follow hlquery](https://img.shields.io/badge/Follow-%40hlquery-blue?logo=x&logoColor=white)](https://x.com/hlquery)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/hlquery)](https://github.com/hlquery/go-api/pulse)
+[![hlquery](https://img.shields.io/badge/GitHub-hlquery-181717?logo=github&logoColor=white)](https://github.com/hlquery/hlquery/stargazers)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-[Documentation](https://docs.hlquery.com) • [hlquery](https://github.com/hlquery/hlquery) • [Discord](https://discord.hlquery.com)
-
 </div>
+
+# hlquery Go API Client
 
 ## Features
 
