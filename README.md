@@ -19,7 +19,7 @@
 - **Type-safe Responses**: Response objects with helper methods
 - **Consistent API Design**: Familiar structure for Go developers
 - **Authentication Support**: Bearer token and X-API-Key authentication
-- **Comprehensive Operations**: Collections, Documents, and Search APIs
+- **Comprehensive Operations**: Collections, Documents, Search, and SQL APIs
 - **Error Handling**: Clear error messages and status codes
 
 ### Installation
@@ -161,6 +161,22 @@ Get server information.
 info, err := client.Info()
 ```
 
+#### `SQL()` and `ExecSQL()`
+
+Execute top-level SQL through `/sql`.
+
+```go
+rows, err := client.SQL("SHOW COLLECTIONS;")
+if err != nil {
+    log.Fatal(err)
+}
+
+execResult, err := client.ExecSQL("DROP logs_archive;")
+if err != nil {
+    log.Fatal(err)
+}
+```
+
 #### Using Collections API Object
 
 ```go
@@ -241,6 +257,39 @@ docs := []map[string]interface{}{doc1, doc2, doc3}
 result, err := documents.Import("collection_name", docs)
 ```
 
+#### Using Search API Object
+
+```go
+search := client.Search()
+
+// Standard search
+result, err := search.Perform("products", map[string]interface{}{
+    "q":        "laptop",
+    "query_by": "title,description",
+    "limit":    10,
+})
+
+// Collection-bound SQL SELECT
+result, err := search.SQL(
+    "products",
+    "SELECT id, title, price FROM products WHERE price > 100 ORDER BY price DESC LIMIT 3;",
+    map[string]interface{}{"highlight": "false"},
+)
+```
+
+#### SQL Convenience Methods
+
+```go
+// Collection-bound SQL SELECT
+result, err := client.SQLSearch(
+    "products",
+    "SELECT id, title, price FROM products WHERE price > 100 ORDER BY price DESC LIMIT 3;",
+)
+
+// Top-level SQL query
+rows, err := client.SQL("SHOW COLLECTIONS;")
+```
+
 ## Examples
 
 See the `examples/` directory for complete examples:
@@ -249,6 +298,7 @@ See the `examples/` directory for complete examples:
 - `collections.go` - Collection management
 - `documents.go` - Document CRUD operations
 - `search.go` - Search operations
+- `sql.go` - SQL query operations
 
 Run examples:
 
@@ -257,6 +307,7 @@ $ cd examples
 $ go run basic_usage.go
 $ go run collections.go
 $ go run documents.go
+$ go run sql.go
 ```
 
 ## Requirements

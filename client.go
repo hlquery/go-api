@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -100,6 +101,11 @@ func (r *Response) GetError() string {
 
 // request performs an HTTP request
 func (c *Client) request(method, path string, body interface{}) (*Response, error) {
+	return c.requestWithQuery(method, path, body, nil)
+}
+
+// requestWithQuery performs an HTTP request with optional query parameters.
+func (c *Client) requestWithQuery(method, path string, body interface{}, queryParams map[string]string) (*Response, error) {
 	var reqBody io.Reader
 	if body != nil {
 		jsonData, err := json.Marshal(body)
@@ -109,7 +115,16 @@ func (c *Client) request(method, path string, body interface{}) (*Response, erro
 		reqBody = bytes.NewBuffer(jsonData)
 	}
 
-	req, err := http.NewRequest(method, c.baseURL+path, reqBody)
+	fullURL := c.baseURL + path
+	if len(queryParams) > 0 {
+		values := url.Values{}
+		for key, value := range queryParams {
+			values.Set(key, value)
+		}
+		fullURL += "?" + values.Encode()
+	}
+
+	req, err := http.NewRequest(method, fullURL, reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -171,6 +186,31 @@ func (c *Client) Links() (*Response, error) {
 // LinksPing pings configured cluster links
 func (c *Client) LinksPing() (*Response, error) {
 	return c.request("GET", "/links/ping", nil)
+}
+
+// SQL executes a top-level SQL query through GET /sql.
+func (c *Client) SQL(sql string, queryParams ...map[string]string) (*Response, error) {
+	if sql == "" {
+		return nil, fmt.Errorf("SQL query must be a non-empty string")
+	}
+
+	params := map[string]string{"sql": sql}
+	if len(queryParams) > 0 {
+		for key, value := range queryParams[0] {
+			params[key] = value
+		}
+	}
+
+	return c.requestWithQuery("GET", "/sql", nil, params)
+}
+
+// ExecSQL executes a top-level SQL statement through POST /sql.
+func (c *Client) ExecSQL(sql string) (*Response, error) {
+	if sql == "" {
+		return nil, fmt.Errorf("SQL query must be a non-empty string")
+	}
+
+	return c.request("POST", "/sql", map[string]interface{}{"exec": sql})
 }
 
 // LinksConnect adds a cluster link (in-memory only)
@@ -287,6 +327,14 @@ func (c *Client) ImportDocuments(collection string, documents []map[string]inter
 func (c *Client) SearchDocuments(collection string, params map[string]interface{}) (*Response, error) {
 	path := fmt.Sprintf("/collections/%s/search", collection)
 	return c.request("POST", path, params)
+}
+
+// SQLSearch executes a collection-bound SQL SELECT through the search endpoint.
+func (c *Client) SQLSearch(collection, sql string, params ...map[string]interface{}) (*Response, error) {
+	if len(params) > 0 {
+		return c.Search().SQL(collection, sql, params[0])
+	}
+	return c.Search().SQL(collection, sql, nil)
 }
 
 // ExecuteRequest performs an arbitrary HTTP request
