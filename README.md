@@ -177,6 +177,27 @@ if err != nil {
 }
 ```
 
+#### Using SQL API Object
+
+```go
+sqlAPI := client.SQLAPI()
+
+// Top-level SQL query
+rows, err := sqlAPI.Query("SHOW COLLECTIONS;")
+
+// Top-level SQL exec
+execResult, err := sqlAPI.Exec("DROP logs_archive;")
+
+// Collection-bound SQL SELECT
+searchResult, err := sqlAPI.Search(
+    "products",
+    "SELECT id, title, price FROM products WHERE price > 100 ORDER BY price DESC LIMIT 3;",
+    map[string]interface{}{
+        "highlight": "false",
+    },
+)
+```
+
 #### Using Collections API Object
 
 ```go

@@ -252,6 +252,11 @@ func (c *Client) Search() *Search {
 	return &Search{client: c}
 }
 
+// SQLAPI returns a SQL API client
+func (c *Client) SQLAPI() *SQLAPI {
+	return &SQLAPI{client: c}
+}
+
 // Convenience methods
 
 // ListCollections lists all collections

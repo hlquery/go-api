@@ -17,10 +17,11 @@ import (
 
 func main() {
 	client := hlquery.NewClient("http://localhost:9200")
+	sqlAPI := client.SQLAPI()
 
 	collection := "products"
 
-	selectResults, err := client.SQLSearch(
+	selectResults, err := sqlAPI.Search(
 		collection,
 		"SELECT id, title, price FROM products WHERE price > 100 ORDER BY price DESC LIMIT 3;",
 		map[string]interface{}{
@@ -35,7 +36,7 @@ func main() {
 	selectJSON, _ := json.MarshalIndent(selectResults.Body, "", "    ")
 	fmt.Println(string(selectJSON))
 
-	showCollections, err := client.SQL("SHOW COLLECTIONS;")
+	showCollections, err := sqlAPI.Query("SHOW COLLECTIONS;")
 	if err != nil {
 		log.Fatal(err)
 	}
