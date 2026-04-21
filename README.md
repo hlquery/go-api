@@ -88,7 +88,7 @@ client.SetAuthToken("your_token_here", "api-key")
 
 ### Reduce Text Example
 
-If the `ai_search` module is enabled, you can call it with `ExecuteRequest` and a query string:
+You can call custom module routes with `ExecuteRequest` and a query string:
 
 ```go
 package main
@@ -104,16 +104,62 @@ import (
 func main() {
     client := hlquery.NewClient("http://localhost:9200")
 
-    path := "/modules/ai_search/talk?q=" +
-        url.QueryEscape("summarize onboarding guide in docs") +
-        "&run=true"
+    path := "/modules/<name>/<route>?q=" +
+        url.QueryEscape("example query")
 
-    summary, err := client.ExecuteRequest("GET", path, nil)
+    moduleResponse, err := client.ExecuteRequest("GET", path, nil)
     if err != nil {
         log.Fatal(err)
     }
 
-    fmt.Println(summary.Body)
+fmt.Println(moduleResponse.Body)
+}
+```
+
+### SQL Example
+
+Use the dedicated SQL helpers for both top-level SQL and collection-bound SQL `SELECT` queries:
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "log"
+
+    hlquery "github.com/hlquery/go-api"
+)
+
+func main() {
+    client := hlquery.NewClient("http://localhost:9200")
+    sqlAPI := client.SQLAPI()
+
+    // Top-level SQL through /sql
+    rows, err := sqlAPI.Query("SHOW COLLECTIONS;")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("SHOW COLLECTIONS:")
+    rowsJSON, _ := json.MarshalIndent(rows.Body, "", "    ")
+    fmt.Println(string(rowsJSON))
+
+    // Collection-bound SQL SELECT through /collections/{name}/documents/search
+    products, err := sqlAPI.Search(
+        "products",
+        "SELECT id, title, price FROM products WHERE price > 100 ORDER BY price DESC LIMIT 3;",
+        map[string]interface{}{
+            "highlight": "false",
+        },
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("Products SQL results:")
+    productsJSON, _ := json.MarshalIndent(products.Body, "", "    ")
+    fmt.Println(string(productsJSON))
 }
 ```
 
@@ -315,20 +361,22 @@ rows, err := client.SQL("SHOW COLLECTIONS;")
 
 See the `examples/` directory for complete examples:
 
-- `basic_usage.go` - Basic usage examples
-- `collections.go` - Collection management
-- `documents.go` - Document CRUD operations
-- `search.go` - Search operations
-- `sql.go` - SQL query operations
+- `examples/basic_usage/main.go` - Basic usage examples
+- `examples/collections/main.go` - Collection management
+- `examples/documents/main.go` - Document CRUD operations
+- `examples/search/main.go` - Search operations
+- `examples/sql/main.go` - SQL query operations
+- `examples/flush/main.go` - Flush workflow example
 
 Run examples:
 
 ```bash
-$ cd examples
-$ go run basic_usage.go
-$ go run collections.go
-$ go run documents.go
-$ go run sql.go
+$ go run ./examples/basic_usage
+$ go run ./examples/collections
+$ go run ./examples/documents
+$ go run ./examples/search
+$ go run ./examples/sql
+$ go run ./examples/flush
 ```
 
 ## Requirements

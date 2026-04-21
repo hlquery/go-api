@@ -93,11 +93,11 @@ func main() {
 			count_before = len(collections_list)
 			fmt.Printf("  Collections before flush: %d\n", count_before)
 			if count_before == 0 {
-				fmt.Println("  ⚠ Warning: No collections found before flush")
+				fmt.Println("  Warning: No collections found before flush")
 			}
 		}
 	} else {
-		fmt.Printf("  ✗ Failed to list collections: %d\n", collections_before.StatusCode)
+		fmt.Printf("  Failed to list collections: %d\n", collections_before.StatusCode)
 	}
 
 	fmt.Println()
@@ -114,7 +114,7 @@ func main() {
 		if cd, ok := body["collections_deleted"].(float64); ok {
 			collections_deleted = int(cd)
 		}
-		fmt.Println("  ✓ Flush completed successfully")
+		fmt.Println("  Flush completed successfully")
 		fmt.Printf("  Collections deleted: %d\n", collections_deleted)
 		message := "N/A"
 		if msg, ok := body["message"].(string); ok {
@@ -122,7 +122,7 @@ func main() {
 		}
 		fmt.Printf("  Message: %s\n", message)
 	} else {
-		fmt.Printf("  ✗ Flush failed: %d\n", flush_result.StatusCode)
+		fmt.Printf("  Flush failed: %d\n", flush_result.StatusCode)
 		errorJSON, _ := json.MarshalIndent(flush_result.Body, "", "  ")
 		fmt.Printf("  Error: %s\n", string(errorJSON))
 		return
@@ -144,13 +144,13 @@ func main() {
 			fmt.Printf("  Collections after flush: %d\n", count_after)
 
 			if count_after == 0 {
-				fmt.Println("  ✓ SUCCESS: All collections have been flushed")
+				fmt.Println("  SUCCESS: All collections have been flushed")
 			} else {
-				fmt.Printf("  ⚠ Warning: Expected 0 collections, but found %d\n", count_after)
+				fmt.Printf("  Warning: Expected 0 collections, but found %d\n", count_after)
 			}
 		}
 	} else {
-		fmt.Printf("  ✗ Failed to list collections: %d\n", collections_after.StatusCode)
+		fmt.Printf("  Failed to list collections: %d\n", collections_after.StatusCode)
 	}
 
 	fmt.Println()
