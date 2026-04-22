@@ -11,13 +11,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/hlquery/go-api"
 )
 
 func main() {
 	// Initialize client
-	client := hlquery.NewClient("http://localhost:9200")
+	baseURL := os.Getenv("HLQ_BASE_URL")
+	if baseURL == "" {
+		baseURL = os.Getenv("HLQUERY_BASE_URL")
+	}
+	if baseURL == "" {
+		baseURL = "http://localhost:9200"
+	}
+	client := hlquery.NewClient(baseURL)
 
 	// Health check
 	health, err := client.Health()
@@ -43,7 +51,7 @@ func main() {
 	}
 
 	// With authentication
-	authenticatedClient := hlquery.NewClient("http://localhost:9200", hlquery.ClientOptions{
+	authenticatedClient := hlquery.NewClient(baseURL, hlquery.ClientOptions{
 		Token:      "your_token_here",
 		AuthMethod: "bearer",
 	})

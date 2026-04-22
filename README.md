@@ -42,13 +42,21 @@ package main
 import (
     "fmt"
     "log"
+    "os"
     
     "github.com/hlquery/go-api"
 )
 
 func main() {
     // Initialize client
-    client := hlquery.NewClient("http://localhost:9200")
+    baseURL := os.Getenv("HLQ_BASE_URL")
+    if baseURL == "" {
+        baseURL = os.Getenv("HLQUERY_BASE_URL")
+    }
+    if baseURL == "" {
+        baseURL = "http://localhost:9200"
+    }
+    client := hlquery.NewClient(baseURL)
     
     // Health check
     health, err := client.Health()
@@ -73,13 +81,13 @@ func main() {
 
 ```go
 // Method 1: Set token in constructor
-client := hlquery.NewClient("http://localhost:9200", hlquery.ClientOptions{
+client := hlquery.NewClient(baseURL, hlquery.ClientOptions{
     Token:      "your_token_here",
     AuthMethod: "bearer", // or "api-key"
 })
 
 // Method 2: Set token dynamically
-client := hlquery.NewClient("http://localhost:9200")
+client := hlquery.NewClient(baseURL)
 client.SetAuthToken("your_token_here", "bearer")
 
 // Method 3: Use X-API-Key
@@ -97,12 +105,20 @@ import (
     "fmt"
     "log"
     "net/url"
+    "os"
 
     hlquery "github.com/hlquery/go-api"
 )
 
 func main() {
-    client := hlquery.NewClient("http://localhost:9200")
+    baseURL := os.Getenv("HLQ_BASE_URL")
+    if baseURL == "" {
+        baseURL = os.Getenv("HLQUERY_BASE_URL")
+    }
+    if baseURL == "" {
+        baseURL = "http://localhost:9200"
+    }
+    client := hlquery.NewClient(baseURL)
 
     path := "/modules/<name>/<route>?q=" +
         url.QueryEscape("example query")
