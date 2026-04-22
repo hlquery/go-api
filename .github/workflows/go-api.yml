@@ -4,29 +4,29 @@ on:
   push:
     paths:
       - ".github/workflows/go-api.yml"
-      - "etc/api/go/**"
+      - "**"
   pull_request:
     paths:
       - ".github/workflows/go-api.yml"
-      - "etc/api/go/**"
+      - "**"
   workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: etc/api/go
+    env:
+      # These workflow files are copied into standalone repos by etc/scripts/hl.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version-file: etc/api/go/go.mod
-          cache-dependency-path: etc/api/go/go.mod
+          go-version: "1.25.5"
+          cache-dependency-path: ./go.mod
 
       - name: Check formatting
         run: |
