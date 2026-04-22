@@ -1,0 +1,49 @@
+name: Go API
+
+on:
+  push:
+    paths:
+      - ".github/workflows/go-api.yml"
+      - "etc/api/go/**"
+  pull_request:
+    paths:
+      - ".github/workflows/go-api.yml"
+      - "etc/api/go/**"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: etc/api/go
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: etc/api/go/go.mod
+          cache-dependency-path: etc/api/go/go.mod
+
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "The following files are not formatted with gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Build examples
+        run: |
+          for dir in examples/*; do
+            if [ -d "$dir" ]; then
+              go build "./$dir"
+            fi
+          done
