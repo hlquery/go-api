@@ -8,33 +8,42 @@
 
 [![Follow hlquery](https://img.shields.io/badge/Follow-%40hlquery-blue?logo=x&logoColor=white)](https://x.com/hlquery)
 [![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/hlquery)](https://github.com/hlquery/go-api/pulse)
-[![hlquery](https://img.shields.io/badge/GitHub-hlquery-181717?logo=github&logoColor=white)](https://github.com/hlquery/hlquery/stargazers)
+[![GitHub](https://img.shields.io/badge/GitHub-go--api-181717?logo=github&logoColor=white)](https://github.com/hlquery/go-api/stargazers)
+[![hlquery](https://img.shields.io/badge/GitHub-hlquery-blue?logo=github&logoColor=white)](https://github.com/hlquery/hlquery/stargazers)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 </div>
 
-### Features
+### What is the hlquery Go API?
 
-- **No External Dependencies**: Uses only Go standard library (except uuid for examples)
-- **Type-safe Responses**: Response objects with helper methods
-- **Consistent API Design**: Familiar structure for Go developers
-- **Authentication Support**: Bearer token and X-API-Key authentication
-- **Comprehensive Operations**: Collections, Documents, Search, and SQL APIs
-- **Error Handling**: Clear error messages and status codes
+The hlquery Go API is the official Go client for hlquery. It wraps the server's HTTP interface in a small, standard-library-friendly client that exposes collections, documents, search, SQL, and SAM helpers.
 
-### Installation
+It is aimed at backend services, internal tools, and API servers that want hlquery integration without managing low-level HTTP details everywhere.
+
+### Why use it?
+
+- Small and idiomatic Go surface.
+- Response helpers for status checks and parsed bodies.
+- Consistent auth handling.
+- Direct access to both convenience methods and raw request execution.
+
+### Why choose it over raw HTTP?
+
+Choose the Go client over raw HTTP when you want less boilerplate for params, headers, and response parsing, one predictable client object for common hlquery features, and something easy to embed in services that already rely on the Go standard library.
+
+### Install
 
 ```bash
 go get github.com/hlquery/go-api
 ```
 
-Or add to your `go.mod`:
+Or add it to `go.mod`:
 
 ```go
 require github.com/hlquery/go-api v0.1.0
 ```
 
-### Basic Usage
+### Quick Start
 
 ```go
 package main
@@ -43,12 +52,11 @@ import (
     "fmt"
     "log"
     "os"
-    
-    "github.com/hlquery/go-api"
+
+    hlquery "github.com/hlquery/go-api"
 )
 
 func main() {
-    // Initialize client
     baseURL := os.Getenv("HLQ_BASE_URL")
     if baseURL == "" {
         baseURL = os.Getenv("HLQUERY_BASE_URL")
@@ -56,345 +64,88 @@ func main() {
     if baseURL == "" {
         baseURL = "http://localhost:9200"
     }
+
     client := hlquery.NewClient(baseURL)
-    
-    // Health check
+
     health, err := client.Health()
     if err != nil {
         log.Fatal(err)
     }
     fmt.Printf("Status: %d\n", health.StatusCode)
-    
-    // List collections
+
     collections, err := client.ListCollections(0, 10)
     if err != nil {
         log.Fatal(err)
     }
-    if collections.IsSuccess() {
-        body := collections.Body
-        fmt.Printf("Found collections: %v\n", body["collections"])
-    }
+    fmt.Println(collections.Body)
 }
 ```
 
-### With Authentication
+### Auth
 
 ```go
-// Method 1: Set token in constructor
-client := hlquery.NewClient(baseURL, hlquery.ClientOptions{
+client := hlquery.NewClient("http://localhost:9200", hlquery.ClientOptions{
     Token:      "your_token_here",
-    AuthMethod: "bearer", // or "api-key"
+    AuthMethod: "bearer",
 })
 
-// Method 2: Set token dynamically
-client := hlquery.NewClient(baseURL)
 client.SetAuthToken("your_token_here", "bearer")
-
-// Method 3: Use X-API-Key
-client.SetAuthToken("your_token_here", "api-key")
+client.SetAuthToken("your_api_key_here", "api-key")
 ```
 
-### Reduce Text Example
+### SAM
 
-You can call custom module routes with `ExecuteRequest` and a query string:
+SAM is separate from vector search. It performs term and intent-style lookup, not vector similarity search.
 
 ```go
-package main
+sam := client.SAMAPI()
 
-import (
-    "fmt"
-    "log"
-    "net/url"
-    "os"
+status, _ := sam.Status("music")
+history, _ := sam.History("music", 5)
+results, _ := sam.Search("music", "queen of pop", map[string]interface{}{
+    "limit": 10,
+})
 
-    hlquery "github.com/hlquery/go-api"
-)
-
-func main() {
-    baseURL := os.Getenv("HLQ_BASE_URL")
-    if baseURL == "" {
-        baseURL = os.Getenv("HLQUERY_BASE_URL")
-    }
-    if baseURL == "" {
-        baseURL = "http://localhost:9200"
-    }
-    client := hlquery.NewClient(baseURL)
-
-    path := "/modules/<name>/<route>?q=" +
-        url.QueryEscape("example query")
-
-    moduleResponse, err := client.ExecuteRequest("GET", path, nil)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-fmt.Println(moduleResponse.Body)
-}
+fmt.Println(status.Body)
+fmt.Println(history.Body)
+fmt.Println(results.Body)
 ```
 
-### SQL Example
-
-Use the dedicated SQL helpers for both top-level SQL and collection-bound SQL `SELECT` queries:
-
-```go
-package main
-
-import (
-    "encoding/json"
-    "fmt"
-    "log"
-
-    hlquery "github.com/hlquery/go-api"
-)
-
-func main() {
-    client := hlquery.NewClient("http://localhost:9200")
-    sqlAPI := client.SQLAPI()
-
-    // Top-level SQL through /sql
-    rows, err := sqlAPI.Query("SHOW COLLECTIONS;")
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Println("SHOW COLLECTIONS:")
-    rowsJSON, _ := json.MarshalIndent(rows.Body, "", "    ")
-    fmt.Println(string(rowsJSON))
-
-    // Collection-bound SQL SELECT through /collections/{name}/documents/search
-    products, err := sqlAPI.Search(
-        "products",
-        "SELECT id, title, price FROM products WHERE price > 100 ORDER BY price DESC LIMIT 3;",
-        map[string]interface{}{
-            "highlight": "false",
-        },
-    )
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Println("Products SQL results:")
-    productsJSON, _ := json.MarshalIndent(products.Body, "", "    ")
-    fmt.Println(string(productsJSON))
-}
-```
-
-### Client Initialization
-
-```go
-client := hlquery.NewClient(baseURL string, options ...ClientOptions)
-```
-
-**Parameters**:
-- `baseURL` (string, required): Base URL of hlquery server (e.g., `"http://localhost:9200"`)
-- `options` (ClientOptions, optional): Client options
-  - `Token` (string): Authentication token
-  - `AuthMethod` (string): Authentication method (`"bearer"` or `"api-key"`)
-  - `Timeout` (time.Duration): Request timeout
-
-#### `Health()`
-
-Check server health status.
-
-```go
-health, err := client.Health()
-if err != nil {
-    log.Fatal(err)
-}
-if health.IsSuccess() {
-    body := health.Body
-    fmt.Printf("Status: %v\n", body["status"])
-}
-```
-
-#### `Stats()`
-
-Get server statistics.
-
-```go
-stats, err := client.Stats()
-```
-
-#### `Info()`
-
-Get server information.
-
-```go
-info, err := client.Info()
-```
-
-#### `SQL()` and `ExecSQL()`
-
-Execute top-level SQL through `/sql`.
-
-```go
-rows, err := client.SQL("SHOW COLLECTIONS;")
-if err != nil {
-    log.Fatal(err)
-}
-
-execResult, err := client.ExecSQL("DROP logs_archive;")
-if err != nil {
-    log.Fatal(err)
-}
-```
-
-#### Using SQL API Object
+### SQL
 
 ```go
 sqlAPI := client.SQLAPI()
 
-// Top-level SQL query
-rows, err := sqlAPI.Query("SHOW COLLECTIONS;")
-
-// Top-level SQL exec
-execResult, err := sqlAPI.Exec("DROP logs_archive;")
-
-// Collection-bound SQL SELECT
-searchResult, err := sqlAPI.Search(
+rows, _ := sqlAPI.Query("SHOW COLLECTIONS;")
+products, _ := sqlAPI.Search(
     "products",
-    "SELECT id, title, price FROM products WHERE price > 100 ORDER BY price DESC LIMIT 3;",
-    map[string]interface{}{
-        "highlight": "false",
-    },
-)
-```
-
-#### Using Collections API Object
-
-```go
-collections := client.Collections()
-
-// List collections
-result, err := collections.List(0, 10)
-
-// Get collection
-result, err := collections.Get("my_collection")
-
-// Create collection
-schema := map[string]interface{}{
-    "fields": []map[string]interface{}{
-        {"name": "title", "type": "string"},
-        {"name": "price", "type": "float"},
-    },
-}
-result, err := collections.Create("new_collection", schema)
-
-// Delete collection
-result, err := collections.Delete("collection_name")
-
-// Update collection
-result, err := collections.Update("collection_name", schema)
-
-// Get formatted fields
-result, err := collections.GetFields("my_collection")
-```
-
-#### Direct Methods
-
-```go
-// List collections
-collections, err := client.ListCollections(offset, limit)
-
-// Get collection
-collection, err := client.GetCollection("collection_name")
-
-// Create collection
-result, err := client.CreateCollection("collection_name", schema)
-
-// Delete collection
-result, err := client.DeleteCollection("collection_name")
-```
-
-#### Using Documents API Object
-
-```go
-documents := client.Documents()
-
-// List documents
-params := map[string]interface{}{
-    "offset": 0,
-    "limit":  10,
-}
-result, err := documents.List("collection_name", params)
-
-// Get document
-result, err := documents.Get("collection_name", "document_id")
-
-// Add document
-doc := map[string]interface{}{
-    "id":    "doc1",
-    "title": "Example",
-    "price": 99.99,
-}
-result, err := documents.Add("collection_name", doc)
-
-// Update document
-result, err := documents.Update("collection_name", "doc_id", doc)
-
-// Delete document
-result, err := documents.Delete("collection_name", "doc_id")
-
-// Import documents (bulk)
-docs := []map[string]interface{}{doc1, doc2, doc3}
-result, err := documents.Import("collection_name", docs)
-```
-
-#### Using Search API Object
-
-```go
-search := client.Search()
-
-// Standard search
-result, err := search.Perform("products", map[string]interface{}{
-    "q":        "laptop",
-    "query_by": "title,description",
-    "limit":    10,
-})
-
-// Collection-bound SQL SELECT
-result, err := search.SQL(
-    "products",
-    "SELECT id, title, price FROM products WHERE price > 100 ORDER BY price DESC LIMIT 3;",
-    map[string]interface{}{"highlight": "false"},
-)
-```
-
-#### SQL Convenience Methods
-
-```go
-// Collection-bound SQL SELECT
-result, err := client.SQLSearch(
-    "products",
-    "SELECT id, title, price FROM products WHERE price > 100 ORDER BY price DESC LIMIT 3;",
+    "SELECT id, title, price FROM products ORDER BY price DESC LIMIT 3;",
+    nil,
 )
 
-// Top-level SQL query
-rows, err := client.SQL("SHOW COLLECTIONS;")
+fmt.Println(rows.Body)
+fmt.Println(products.Body)
 ```
 
-## Examples
+### Reduce Text Example
 
-See the `examples/` directory for complete examples:
+Use the raw request helper for custom module routes:
 
-- `examples/basic_usage/main.go` - Basic usage examples
-- `examples/collections/main.go` - Collection management
-- `examples/documents/main.go` - Document CRUD operations
-- `examples/search/main.go` - Search operations
-- `examples/sql/main.go` - SQL query operations
-- `examples/flush/main.go` - Flush workflow example
+```go
+moduleResponse, err := client.ExecuteRequest(
+    "GET",
+    "/modules/<name>/<route>?q=example",
+    nil,
+)
+if err != nil {
+    log.Fatal(err)
+}
 
-Run examples:
-
-```bash
-$ go run ./examples/basic_usage
-$ go run ./examples/collections
-$ go run ./examples/documents
-$ go run ./examples/search
-$ go run ./examples/sql
-$ go run ./examples/flush
+fmt.Println(moduleResponse.Body)
 ```
 
-## Requirements
+### Notes
 
-- Go >= 1.21
+- Core client usage depends only on Go's standard library.
+- The README examples use `HLQ_BASE_URL` and `HLQUERY_BASE_URL` when available.
+- See `etc/api/go/examples/` for focused collection, document, search, and SQL usage.
