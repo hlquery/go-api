@@ -144,8 +144,23 @@ if err != nil {
 fmt.Println(moduleResponse.Body)
 ```
 
-### Notes
+### Contributing
 
-- Core client usage depends only on Go's standard library.
-- The README examples use `HLQ_BASE_URL` and `HLQUERY_BASE_URL` when available.
-- See `etc/api/go/examples/` for focused collection, document, search, and SQL usage.
+We welcome contributions from the community! All contributions must be released under the BSD 3-Clause license.
+
+### How to Contribute
+
+- Check existing [issues](https://github.com/hlquery/hlquery/issues) or create new ones
+- Contribute to client libraries (Node.js, Go, Java, Python, PHP, Ruby, Rust, Perl, C++)
+- Test and report bugs
+- Improve documentation
+
+### Community
+
+- 📖 [Documentation](https://docs.hlquery.com)
+- 🐦 [X (Twitter)](https://x.com/hlquery)
+- 📦 [GitHub](https://github.com/hlquery/hlquery)
+
+### License
+
+hlquery is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
