@@ -34,7 +34,7 @@ Choose the Go client over raw HTTP when you want less boilerplate for params, he
 ### Install
 
 ```bash
-go get github.com/hlquery/go-api
+$ go get github.com/hlquery/go-api/client
 ```
 
 Or add it to `go.mod`:
@@ -53,7 +53,7 @@ import (
     "log"
     "os"
 
-    hlquery "github.com/hlquery/go-api"
+    hlquery "github.com/hlquery/go-api/client"
 )
 
 func main() {

@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/hlquery/go-api"
+	hlquery "github.com/hlquery/go-api/client"
 )
 
 func main() {

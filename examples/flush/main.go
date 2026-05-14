@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hlquery/go-api"
+	hlquery "github.com/hlquery/go-api/client"
 )
 
 func main() {
