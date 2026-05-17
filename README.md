@@ -7,6 +7,7 @@
 **A clean, idiomatic Go client library for hlquery, designed with a familiar and intuitive API structure.**
 
 [![Follow hlquery](https://img.shields.io/badge/Follow-%40hlquery-blue?logo=x&logoColor=white)](https://x.com/hlquery)
+[![Go API CI](https://github.com/hlquery/go-api/actions/workflows/go-api.yml/badge.svg)](https://github.com/hlquery/go-api/actions/workflows/go-api.yml)
 [![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/hlquery)](https://github.com/hlquery/go-api/pulse)
 [![GitHub](https://img.shields.io/badge/GitHub-go--api-181717?logo=github&logoColor=white)](https://github.com/hlquery/go-api/stargazers)
 [![hlquery](https://img.shields.io/badge/GitHub-hlquery-blue?logo=github&logoColor=white)](https://github.com/hlquery/hlquery/stargazers)
@@ -16,7 +17,7 @@
 
 ### What is the hlquery Go API?
 
-The hlquery Go API is the official Go client for hlquery. It wraps the server's HTTP interface in a small, standard-library-friendly client that exposes collections, documents, search, SQL, and SAM helpers.
+The hlquery Go API is the official Go client for [hlquery](https://github.com/hlquery/hlquery). It wraps the server's HTTP interface in a small, standard-library-friendly client that exposes collections, documents, search, SQL, and SAM helpers.
 
 It is aimed at backend services, internal tools, and API servers that want hlquery integration without managing low-level HTTP details everywhere.
 
