@@ -6,11 +6,12 @@
 
 **A clean, idiomatic Go client library for hlquery, designed with a familiar and intuitive API structure.**
 
-[![Follow hlquery](https://img.shields.io/badge/Follow-%40hlquery-blue?logo=x&logoColor=white)](https://x.com/hlquery)
-[![Go Build](https://github.com/hlquery/go-api/actions/workflows/go-api.yml/badge.svg)](https://github.com/hlquery/go-api/actions/workflows/go-api.yml)
-[![GitHub](https://img.shields.io/badge/GitHub-go--api-purple?logo=github&logoColor=white)](https://github.com/hlquery/go-api/stargazers)
-[![hlquery](https://img.shields.io/badge/GitHub-hlquery-blue?logo=github&logoColor=white)](https://github.com/hlquery/hlquery/stargazers)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![Follow hlquery](https://img.shields.io/badge/Follow-%40hlquery-blue?logo=x&logoColor=white&labelColor=000000)](https://x.com/hlquery)
+[![Go Build](https://github.com/hlquery/go-api/actions/workflows/go-api.yml/badge.svg&labelColor=000000)](https://github.com/hlquery/go-api/actions/workflows/go-api.yml)
+[![GitHub](https://img.shields.io/badge/GitHub-go--api-purple?logo=github&logoColor=white&labelColor=000000)](https://github.com/hlquery/go-api/)
+[![hlquery](https://img.shields.io/badge/GitHub-hlquery-blue?logo=github&logoColor=white&labelColor=000000)](https://github.com/hlquery/hlquery/)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-a35a0f?logo=open-source-initiative&logoColor=white&labelColor=000000)](https://opensource.org/licenses/BSD-3-Clause)
+
 
 </div>
 
@@ -22,14 +23,7 @@ It is aimed at backend services, internal tools, and API servers that want hlque
 
 ### Why use it?
 
-- Small and idiomatic Go surface.
-- Response helpers for status checks and parsed bodies.
-- Consistent auth handling.
-- Direct access to both convenience methods and raw request execution.
-
-### Why choose it over raw HTTP?
-
-Choose the Go client over raw HTTP when you want less boilerplate for params, headers, and response parsing, one predictable client object for common hlquery features, and something easy to embed in services that already rely on the Go standard library.
+Use it when you want a small, idiomatic Go surface with response helpers for status checks and parsed bodies, consistent auth handling, and direct access to both convenience methods and raw request execution.
 
 ### Install
 
