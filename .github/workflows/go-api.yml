@@ -1,4 +1,4 @@
-name: Go API
+name: Go Build
 
 on:
   push:
