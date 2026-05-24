@@ -21,8 +21,14 @@ type Search struct {
 
 // Perform performs a search query
 func (s *Search) Perform(collection string, params map[string]interface{}) (*Response, error) {
-	path := fmt.Sprintf("/collections/%s/search", collection)
+	path := fmt.Sprintf("/collections/%s/documents/search", encodePathPart(collection))
 	return s.client.request("POST", path, params)
+}
+
+// PerformGET performs a search with query parameters.
+func (s *Search) PerformGET(collection string, params map[string]interface{}) (*Response, error) {
+	path := fmt.Sprintf("/collections/%s/documents/search", encodePathPart(collection))
+	return s.client.requestWithQueryValues("GET", path, nil, params)
 }
 
 // Multi performs multiple searches
@@ -31,6 +37,21 @@ func (s *Search) Multi(searches []map[string]interface{}) (*Response, error) {
 		"searches": searches,
 	}
 	return s.client.request("POST", "/multi_search", body)
+}
+
+// MultiGET performs multi-search with query parameters.
+func (s *Search) MultiGET(params map[string]interface{}) (*Response, error) {
+	return s.client.requestWithQueryValues("GET", "/multi_search", nil, params)
+}
+
+// Global performs a cross-collection search.
+func (s *Search) Global(params map[string]interface{}) (*Response, error) {
+	return s.client.request("POST", "/search", params)
+}
+
+// GlobalGET performs a cross-collection search with query parameters.
+func (s *Search) GlobalGET(params map[string]interface{}) (*Response, error) {
+	return s.client.requestWithQueryValues("GET", "/search", nil, params)
 }
 
 // SQL executes a collection-bound SQL SELECT through the search endpoint.
@@ -56,6 +77,12 @@ func (s *Search) SQL(collection, sql string, params map[string]interface{}) (*Re
 
 // Vector performs a vector search
 func (s *Search) Vector(collection string, params map[string]interface{}) (*Response, error) {
-	path := fmt.Sprintf("/collections/%s/vector_search", collection)
+	path := fmt.Sprintf("/collections/%s/vector_search", encodePathPart(collection))
 	return s.client.request("POST", path, params)
+}
+
+// VectorGET performs a vector search with query parameters.
+func (s *Search) VectorGET(collection string, params map[string]interface{}) (*Response, error) {
+	path := fmt.Sprintf("/collections/%s/vector_search", encodePathPart(collection))
+	return s.client.requestWithQueryValues("GET", path, nil, params)
 }
