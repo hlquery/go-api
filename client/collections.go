@@ -26,28 +26,51 @@ func (c *Collections) ListDistributed() (*Response, error) {
 
 // Get gets a collection by name
 func (c *Collections) Get(name string) (*Response, error) {
+	if err := requireNonEmpty(name, "collection name"); err != nil {
+		return nil, err
+	}
 	return c.client.request("GET", "/collections/"+encodePathPart(name), nil)
 }
 
 // Create creates a new collection
 func (c *Collections) Create(name string, schema map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(name, "collection name"); err != nil {
+		return nil, err
+	}
 	body := copyMap(schema)
 	body["name"] = name
 	return c.client.request("POST", "/collections", body)
 }
 
+// CreateSchema creates a collection from a typed schema payload.
+func (c *Collections) CreateSchema(schema CollectionSchema) (*Response, error) {
+	if err := requireNonEmpty(schema.Name, "collection name"); err != nil {
+		return nil, err
+	}
+	return c.client.request("POST", "/collections", schema)
+}
+
 // Delete deletes a collection
 func (c *Collections) Delete(name string) (*Response, error) {
+	if err := requireNonEmpty(name, "collection name"); err != nil {
+		return nil, err
+	}
 	return c.client.request("DELETE", "/collections/"+encodePathPart(name), nil)
 }
 
 // Update updates a collection schema
 func (c *Collections) Update(name string, schema map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(name, "collection name"); err != nil {
+		return nil, err
+	}
 	return c.client.request("POST", "/collections/"+encodePathPart(name)+"/update", schema)
 }
 
 // GetLanguage gets language metadata for a collection.
 func (c *Collections) GetLanguage(name string) (*Response, error) {
+	if err := requireNonEmpty(name, "collection name"); err != nil {
+		return nil, err
+	}
 	return c.client.request("GET", "/collections/"+encodePathPart(name)+"/lang", nil)
 }
 

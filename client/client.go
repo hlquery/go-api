@@ -14,6 +14,7 @@ package hlquery
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -26,29 +27,57 @@ import (
 
 // Client represents the hlquery API client
 type Client struct {
-	baseURL    string
-	httpClient *http.Client
-	token      string
-	authMethod string // "bearer" or "api-key"
+	baseURL          string
+	httpClient       *http.Client
+	token            string
+	authMethod       string // "bearer" or "api-key"
+	maxResponseBytes int64
+	initErr          error
 }
 
 // ClientOptions represents optional client configuration
 type ClientOptions struct {
-	Token      string
-	AuthMethod string // "bearer" or "api-key"
-	Timeout    time.Duration
+	Token            string
+	AuthMethod       string // "bearer" or "api-key"
+	Timeout          time.Duration
+	HTTPClient       *http.Client
+	MaxResponseBytes int64
 }
+
+const defaultMaxResponseBytes int64 = 64 << 20
 
 // NewClient creates a new hlquery API client
 func NewClient(baseURL string, options ...ClientOptions) *Client {
+	client, err := NewClientWithError(baseURL, options...)
+	if err != nil {
+		client = newClientWithOptions(baseURL, options...)
+		client.initErr = err
+	}
+	return client
+}
+
+// NewClientWithError creates a new client and validates the base URL.
+func NewClientWithError(baseURL string, options ...ClientOptions) (*Client, error) {
+	client := newClientWithOptions(baseURL, options...)
+	if err := validateBaseURL(client.baseURL); err != nil {
+		return client, err
+	}
+	return client, nil
+}
+
+func newClientWithOptions(baseURL string, options ...ClientOptions) *Client {
 	client := &Client{
-		baseURL:    baseURL,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
-		authMethod: "bearer",
+		baseURL:          strings.TrimRight(baseURL, "/"),
+		httpClient:       &http.Client{Timeout: 30 * time.Second},
+		authMethod:       "bearer",
+		maxResponseBytes: defaultMaxResponseBytes,
 	}
 
 	if len(options) > 0 {
 		opt := options[0]
+		if opt.HTTPClient != nil {
+			client.httpClient = opt.HTTPClient
+		}
 		if opt.Token != "" {
 			client.token = opt.Token
 		}
@@ -58,9 +87,26 @@ func NewClient(baseURL string, options ...ClientOptions) *Client {
 		if opt.Timeout > 0 {
 			client.httpClient.Timeout = opt.Timeout
 		}
+		if opt.MaxResponseBytes > 0 {
+			client.maxResponseBytes = opt.MaxResponseBytes
+		}
 	}
 
 	return client
+}
+
+func validateBaseURL(raw string) error {
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return fmt.Errorf("invalid base URL: %w", err)
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return fmt.Errorf("invalid base URL: scheme must be http or https")
+	}
+	if parsed.Host == "" {
+		return fmt.Errorf("invalid base URL: host is required")
+	}
+	return nil
 }
 
 // SetAuthToken sets the authentication token
@@ -78,6 +124,23 @@ type Response struct {
 	Data       interface{}
 	RawBody    []byte
 	Headers    http.Header
+}
+
+// APIError describes a non-2xx API response.
+type APIError struct {
+	StatusCode int
+	Message    string
+	Response   *Response
+}
+
+func (e *APIError) Error() string {
+	if e == nil {
+		return ""
+	}
+	if e.Message != "" {
+		return fmt.Sprintf("hlquery API error: HTTP %d: %s", e.StatusCode, e.Message)
+	}
+	return fmt.Sprintf("hlquery API error: HTTP %d", e.StatusCode)
 }
 
 // IsSuccess returns true if the response status code is 2xx
@@ -118,6 +181,11 @@ func (c *Client) request(method, path string, body interface{}) (*Response, erro
 	return c.requestWithQuery(method, path, body, nil)
 }
 
+// requestWithContext performs an HTTP request with caller-controlled cancellation.
+func (c *Client) requestWithContext(ctx context.Context, method, path string, body interface{}) (*Response, error) {
+	return c.requestWithQueryValuesContext(ctx, method, path, body, nil)
+}
+
 // requestWithQuery performs an HTTP request with optional query parameters.
 func (c *Client) requestWithQuery(method, path string, body interface{}, queryParams map[string]string) (*Response, error) {
 	params := map[string]interface{}{}
@@ -129,6 +197,17 @@ func (c *Client) requestWithQuery(method, path string, body interface{}, queryPa
 
 // requestWithQueryValues performs an HTTP request with flexible query parameters.
 func (c *Client) requestWithQueryValues(method, path string, body interface{}, queryParams map[string]interface{}) (*Response, error) {
+	return c.requestWithQueryValuesContext(context.Background(), method, path, body, queryParams)
+}
+
+func (c *Client) requestWithQueryValuesContext(ctx context.Context, method, path string, body interface{}, queryParams map[string]interface{}) (*Response, error) {
+	if c.initErr != nil {
+		return nil, c.initErr
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	var reqBody io.Reader
 	if body != nil {
 		jsonData, err := json.Marshal(body)
@@ -147,12 +226,15 @@ func (c *Client) requestWithQueryValues(method, path string, body interface{}, q
 		fullURL += "?" + values.Encode()
 	}
 
-	req, err := http.NewRequest(method, fullURL, reqBody)
+	req, err := http.NewRequestWithContext(ctx, method, fullURL, reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	if c.token != "" {
 		if c.authMethod == "api-key" {
 			req.Header.Set("X-API-Key", c.token)
@@ -167,9 +249,17 @@ func (c *Client) requestWithQueryValues(method, path string, body interface{}, q
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	reader := io.Reader(resp.Body)
+	if c.maxResponseBytes > 0 {
+		reader = io.LimitReader(resp.Body, c.maxResponseBytes+1)
+	}
+
+	respBody, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+	if c.maxResponseBytes > 0 && int64(len(respBody)) > c.maxResponseBytes {
+		return nil, fmt.Errorf("response body exceeds %d bytes", c.maxResponseBytes)
 	}
 
 	response := &Response{
@@ -184,6 +274,14 @@ func (c *Client) requestWithQueryValues(method, path string, body interface{}, q
 		response.Data = jsonBody
 		if objectBody, ok := jsonBody.(map[string]interface{}); ok {
 			response.Body = objectBody
+		}
+	}
+
+	if !response.IsSuccess() {
+		return response, &APIError{
+			StatusCode: response.StatusCode,
+			Message:    response.GetError(),
+			Response:   response,
 		}
 	}
 
@@ -235,6 +333,46 @@ func copyMap(input map[string]interface{}) map[string]interface{} {
 	}
 	return output
 }
+
+func mapFromJSONStruct(input interface{}) map[string]interface{} {
+	encoded, err := json.Marshal(input)
+	if err != nil {
+		return map[string]interface{}{}
+	}
+	var output map[string]interface{}
+	if err := json.Unmarshal(encoded, &output); err != nil {
+		return map[string]interface{}{}
+	}
+	return output
+}
+
+func requireNonEmpty(value, field string) error {
+	if strings.TrimSpace(value) == "" {
+		return fmt.Errorf("%s must be a non-empty string", field)
+	}
+	return nil
+}
+
+// CollectionSchema is a typed helper for common collection creation calls.
+type CollectionSchema struct {
+	Name                string                   `json:"name,omitempty"`
+	Fields              []map[string]interface{} `json:"fields,omitempty"`
+	SearchableFields    []string                 `json:"searchable_fields,omitempty"`
+	DefaultSortingField string                   `json:"default_sorting_field,omitempty"`
+}
+
+// SearchParams is a typed helper for common search calls.
+type SearchParams struct {
+	Query    string `json:"q,omitempty"`
+	QueryBy  string `json:"query_by,omitempty"`
+	Limit    int    `json:"limit,omitempty"`
+	Offset   int    `json:"offset,omitempty"`
+	FilterBy string `json:"filter_by,omitempty"`
+	SortBy   string `json:"sort_by,omitempty"`
+}
+
+// Document is a typed alias for JSON document payloads.
+type Document map[string]interface{}
 
 // Health checks the server health status
 func (c *Client) Health() (*Response, error) {
@@ -308,6 +446,9 @@ func (c *Client) ExecSQL(sql string) (*Response, error) {
 
 // LinksConnect adds a cluster link (in-memory only)
 func (c *Client) LinksConnect(endpointOrHost string, port ...int) (*Response, error) {
+	if err := requireNonEmpty(endpointOrHost, "endpoint or host"); err != nil {
+		return nil, err
+	}
 	body := map[string]interface{}{}
 	if len(port) > 0 {
 		body["host"] = endpointOrHost
@@ -320,6 +461,9 @@ func (c *Client) LinksConnect(endpointOrHost string, port ...int) (*Response, er
 
 // LinksDisconnect removes a cluster link (in-memory only)
 func (c *Client) LinksDisconnect(endpointOrHost string, port ...int) (*Response, error) {
+	if err := requireNonEmpty(endpointOrHost, "endpoint or host"); err != nil {
+		return nil, err
+	}
 	body := map[string]interface{}{}
 	if len(port) > 0 {
 		body["host"] = endpointOrHost
@@ -414,63 +558,110 @@ func (c *Client) ListCollectionsDistributed() (*Response, error) {
 
 // GetCollection gets a collection by name
 func (c *Client) GetCollection(name string) (*Response, error) {
+	if err := requireNonEmpty(name, "collection name"); err != nil {
+		return nil, err
+	}
 	return c.request("GET", "/collections/"+encodePathPart(name), nil)
 }
 
 // CreateCollection creates a new collection
 func (c *Client) CreateCollection(name string, schema map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(name, "collection name"); err != nil {
+		return nil, err
+	}
 	body := copyMap(schema)
 	body["name"] = name
 	return c.request("POST", "/collections", body)
 }
 
+// CreateCollectionSchema creates a new collection using a typed schema payload.
+func (c *Client) CreateCollectionSchema(schema CollectionSchema) (*Response, error) {
+	return c.Collections().CreateSchema(schema)
+}
+
 // DeleteCollection deletes a collection
 func (c *Client) DeleteCollection(name string) (*Response, error) {
+	if err := requireNonEmpty(name, "collection name"); err != nil {
+		return nil, err
+	}
 	return c.request("DELETE", "/collections/"+encodePathPart(name), nil)
 }
 
 // UpdateCollection updates a collection schema.
 func (c *Client) UpdateCollection(name string, schema map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(name, "collection name"); err != nil {
+		return nil, err
+	}
 	return c.request("POST", "/collections/"+encodePathPart(name)+"/update", schema)
 }
 
 // GetCollectionLanguage gets language metadata for a collection.
 func (c *Client) GetCollectionLanguage(name string) (*Response, error) {
+	if err := requireNonEmpty(name, "collection name"); err != nil {
+		return nil, err
+	}
 	return c.request("GET", "/collections/"+encodePathPart(name)+"/lang", nil)
 }
 
 // ListDocuments lists documents in a collection
 func (c *Client) ListDocuments(collection string, offset, limit int) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/collections/%s/documents", encodePathPart(collection))
 	return c.requestWithQueryValues("GET", path, nil, map[string]interface{}{"offset": offset, "limit": limit})
 }
 
 // GetDocument gets a document by ID
 func (c *Client) GetDocument(collection, docID string) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
+	if err := requireNonEmpty(docID, "document id"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/collections/%s/documents/%s", encodePathPart(collection), encodePathPart(docID))
 	return c.request("GET", path, nil)
 }
 
 // AddDocument adds a document to a collection
 func (c *Client) AddDocument(collection string, document map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/collections/%s/documents", encodePathPart(collection))
 	return c.request("POST", path, document)
 }
 
 // UpdateDocument updates a document
 func (c *Client) UpdateDocument(collection, docID string, document map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
+	if err := requireNonEmpty(docID, "document id"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/collections/%s/documents/%s", encodePathPart(collection), encodePathPart(docID))
 	return c.request("PUT", path, document)
 }
 
 // DeleteDocument deletes a document
 func (c *Client) DeleteDocument(collection, docID string) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
+	if err := requireNonEmpty(docID, "document id"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/collections/%s/documents/%s", encodePathPart(collection), encodePathPart(docID))
 	return c.request("DELETE", path, nil)
 }
 
 // ImportDocuments imports multiple documents
 func (c *Client) ImportDocuments(collection string, documents []map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
 	body := map[string]interface{}{
 		"documents": documents,
 	}
@@ -480,8 +671,16 @@ func (c *Client) ImportDocuments(collection string, documents []map[string]inter
 
 // Search performs a search query
 func (c *Client) SearchDocuments(collection string, params map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/collections/%s/documents/search", encodePathPart(collection))
 	return c.request("POST", path, params)
+}
+
+// SearchDocumentsTyped performs a search using typed parameters.
+func (c *Client) SearchDocumentsTyped(collection string, params SearchParams) (*Response, error) {
+	return c.Search().PerformTyped(collection, params)
 }
 
 // SQLSearch executes a collection-bound SQL SELECT through the search endpoint.
@@ -497,9 +696,19 @@ func (c *Client) ExecuteRequest(method, path string, body interface{}) (*Respons
 	return c.request(method, path, body)
 }
 
+// ExecuteRequestWithContext performs an arbitrary HTTP request with caller-controlled cancellation.
+func (c *Client) ExecuteRequestWithContext(ctx context.Context, method, path string, body interface{}) (*Response, error) {
+	return c.requestWithContext(ctx, method, path, body)
+}
+
 // ExecuteRequestWithQuery performs an arbitrary HTTP request with query parameters.
 func (c *Client) ExecuteRequestWithQuery(method, path string, body interface{}, queryParams map[string]interface{}) (*Response, error) {
 	return c.requestWithQueryValues(method, path, body, queryParams)
+}
+
+// ExecuteRequestWithQueryContext performs an arbitrary HTTP request with query params and caller-controlled cancellation.
+func (c *Client) ExecuteRequestWithQueryContext(ctx context.Context, method, path string, body interface{}, queryParams map[string]interface{}) (*Response, error) {
+	return c.requestWithQueryValuesContext(ctx, method, path, body, queryParams)
 }
 
 // Flush flushes all data from the database

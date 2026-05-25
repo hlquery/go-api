@@ -21,12 +21,23 @@ type Search struct {
 
 // Perform performs a search query
 func (s *Search) Perform(collection string, params map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/collections/%s/documents/search", encodePathPart(collection))
 	return s.client.request("POST", path, params)
 }
 
+// PerformTyped performs a search using a typed parameter helper.
+func (s *Search) PerformTyped(collection string, params SearchParams) (*Response, error) {
+	return s.Perform(collection, mapFromJSONStruct(params))
+}
+
 // PerformGET performs a search with query parameters.
 func (s *Search) PerformGET(collection string, params map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/collections/%s/documents/search", encodePathPart(collection))
 	return s.client.requestWithQueryValues("GET", path, nil, params)
 }
@@ -77,12 +88,18 @@ func (s *Search) SQL(collection, sql string, params map[string]interface{}) (*Re
 
 // Vector performs a vector search
 func (s *Search) Vector(collection string, params map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/collections/%s/vector_search", encodePathPart(collection))
 	return s.client.request("POST", path, params)
 }
 
 // VectorGET performs a vector search with query parameters.
 func (s *Search) VectorGET(collection string, params map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/collections/%s/vector_search", encodePathPart(collection))
 	return s.client.requestWithQueryValues("GET", path, nil, params)
 }

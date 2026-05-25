@@ -8,6 +8,9 @@ type SAM struct {
 }
 
 func (s *SAM) Search(collection, query string, params map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(query, "query"); err != nil {
+		return nil, err
+	}
 	queryParams := copyMap(params)
 	queryParams["q"] = query
 	if collection != "" {
@@ -81,6 +84,9 @@ func (s *SAM) FlushActorMetadata() (*Response, error) {
 }
 
 func (s *SAM) ListDocuments(collection string, offset, limit int, params map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
 	queryParams := copyMap(params)
 	queryParams["collection"] = collection
 	queryParams["offset"] = offset
@@ -89,11 +95,23 @@ func (s *SAM) ListDocuments(collection string, offset, limit int, params map[str
 }
 
 func (s *SAM) GetDocument(collection, docID string, params map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
+	if err := requireNonEmpty(docID, "document id"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/sam/documents/%s/%s", encodePathPart(collection), encodePathPart(docID))
 	return s.client.requestWithQueryValues("GET", path, nil, params)
 }
 
 func (s *SAM) AddDocumentLabel(collection, docID string, label map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(collection, "collection name"); err != nil {
+		return nil, err
+	}
+	if err := requireNonEmpty(docID, "document id"); err != nil {
+		return nil, err
+	}
 	path := fmt.Sprintf("/sam/label/add/%s/%s", encodePathPart(collection), encodePathPart(docID))
 	return s.client.request("POST", path, label)
 }
