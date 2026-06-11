@@ -17,7 +17,7 @@
 
 ### What is the hlquery Go API?
 
-The hlquery Go API is the official Go client for [hlquery](https://github.com/hlquery/hlquery). It wraps the server's HTTP interface in a small, standard-library-friendly client that exposes collections, documents, search, SQL, and SAM helpers.
+The hlquery Go API is the official Go client for [hlquery](https://github.com/hlquery/hlquery). It wraps the server's HTTP interface in a small, standard-library-friendly client that exposes collections, documents, search, and SQL helpers.
 
 It is aimed at backend services, internal tools, and API servers that want hlquery integration without managing low-level HTTP details everywhere.
 
@@ -85,24 +85,6 @@ client := hlquery.NewClient("http://localhost:9200", hlquery.ClientOptions{
 
 client.SetAuthToken("your_token_here", "bearer")
 client.SetAuthToken("your_api_key_here", "api-key")
-```
-
-### SAM
-
-SAM is separate from vector search. It performs term and intent-style lookup, not vector similarity search.
-
-```go
-sam := client.SAMAPI()
-
-status, _ := sam.Status("music")
-history, _ := sam.History("music", 5)
-results, _ := sam.Search("music", "queen of pop", map[string]interface{}{
-    "limit": 10,
-})
-
-fmt.Println(status.Body)
-fmt.Println(history.Body)
-fmt.Println(results.Body)
 ```
 
 ### SQL

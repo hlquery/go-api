@@ -236,7 +236,7 @@ func TestNilParamsDoNotPanic(t *testing.T) {
 		}
 	})
 
-	if _, err := client.SAM().Search("", "hello", nil); err != nil {
+	if _, err := client.Search().PerformGET("products", map[string]interface{}{"q": "hello"}); err != nil {
 		t.Fatal(err)
 	}
 }

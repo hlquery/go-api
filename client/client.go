@@ -499,16 +499,6 @@ func (c *Client) System() *System {
 	return &System{client: c}
 }
 
-// SAMAPI returns a SAM API client.
-func (c *Client) SAMAPI() *SAM {
-	return &SAM{client: c}
-}
-
-// SAM returns a SAM API client.
-func (c *Client) SAM() *SAM {
-	return c.SAMAPI()
-}
-
 // Aliases returns an Aliases API client.
 func (c *Client) Aliases() *Aliases {
 	return &Aliases{client: c}
