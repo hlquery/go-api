@@ -33,7 +33,6 @@ func (s *System) DocTotal() (*Response, error)   { return s.client.request("GET"
 func (s *System) Etc() (*Response, error)        { return s.client.Etc() }
 func (s *System) Startup() (*Response, error)    { return s.client.request("GET", "/startup", nil) }
 func (s *System) BootStatus() (*Response, error) { return s.client.request("GET", "/boot-status", nil) }
-func (s *System) LLM() (*Response, error)        { return s.client.request("GET", "/llm", nil) }
 func (s *System) Integrity() (*Response, error)  { return s.client.request("GET", "/integrity", nil) }
 func (s *System) Consistency() (*Response, error) {
 	return s.client.request("GET", "/consistency", nil)
