@@ -4,14 +4,13 @@
 
 <div align="center">
 
-**A clean, idiomatic Go client library for hlquery, designed with a familiar and intuitive API structure.**
+**A clean, idiomatic Go client library for hlquery with a familiar service-based API.**
 
 [![Follow hlquery](https://img.shields.io/badge/Follow-%40hlquery-blue?logo=x&logoColor=white&labelColor=000000)](https://x.com/hlquery)
 [![Go build](https://img.shields.io/badge/Go%20build-passing-brightgreen?logo=go&logoColor=white&labelColor=000000)](https://github.com/hlquery/go-api/actions/workflows/go-api.yml)
 [![GitHub](https://img.shields.io/badge/GitHub-go--api-purple?logo=github&logoColor=white&labelColor=000000)](https://github.com/hlquery/go-api/)
 [![hlquery](https://img.shields.io/badge/GitHub-hlquery-blue?logo=github&logoColor=white&labelColor=000000)](https://github.com/hlquery/hlquery/)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-a35a0f?logo=open-source-initiative&logoColor=white&labelColor=000000)](https://opensource.org/licenses/BSD-3-Clause)
-
 
 </div>
 
@@ -25,7 +24,7 @@ It is aimed at backend services, internal tools, and API servers that want hlque
 
 Use it when you want a small, idiomatic Go surface with response helpers for status checks and parsed bodies, consistent auth handling, and direct access to both convenience methods and raw request execution.
 
-### Install
+### Installation
 
 ```bash
 $ go get github.com/hlquery/go-api/client
@@ -37,7 +36,7 @@ Or add it to `go.mod`:
 require github.com/hlquery/go-api v0.1.0
 ```
 
-### Quick Start
+### Quick start
 
 ```go
 package main
@@ -75,7 +74,7 @@ func main() {
 }
 ```
 
-### Auth
+### Authentication
 
 ```go
 client := hlquery.NewClient("http://localhost:9200", hlquery.ClientOptions{
@@ -103,7 +102,7 @@ fmt.Println(rows.Body)
 fmt.Println(products.Body)
 ```
 
-### Reduce Text Example
+### Custom Module Routes
 
 Use the raw request helper for custom module routes:
 
@@ -126,7 +125,7 @@ We welcome contributions from the community! All contributions must be released 
 
 ### How to Contribute
 
-- Check existing [Go API issues](https://github.com/hlquery/go-api/issues) or create new ones
+- Check existing [Go API issues](https://github.com/hlquery/go-api/issues) or open a new one
 - Contribute Go client changes to [hlquery/go-api](https://github.com/hlquery/go-api)
 - Contribute shared server/API changes to [hlquery/hlquery](https://github.com/hlquery/hlquery)
 - Test and report bugs against the Go client

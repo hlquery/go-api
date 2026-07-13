@@ -409,6 +409,11 @@ func (c *Client) Etc() (*Response, error) {
 	return c.request("GET", "/etc", nil)
 }
 
+// ConfigFiles returns active configuration files and included files.
+func (c *Client) ConfigFiles() (*Response, error) {
+	return c.request("GET", "/config-files", nil)
+}
+
 // Links lists configured cluster links
 func (c *Client) Links() (*Response, error) {
 	return c.request("GET", "/links", nil)

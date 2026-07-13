@@ -101,6 +101,44 @@ func TestResourceClientRoutes(t *testing.T) {
 	}
 }
 
+func TestConfigFilesUsesCoreRoute(t *testing.T) {
+	client := testClient(t, func(t *testing.T, r *http.Request, _ map[string]interface{}) {
+		if r.Method != "GET" {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/config-files" {
+			t.Fatalf("path = %s, want /config-files", r.URL.Path)
+		}
+	})
+
+	if _, err := client.ConfigFiles(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMultiGETSendsSearchesInBody(t *testing.T) {
+	client := testClient(t, func(t *testing.T, r *http.Request, body map[string]interface{}) {
+		if r.Method != "GET" {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/multi_search" {
+			t.Fatalf("path = %s, want /multi_search", r.URL.Path)
+		}
+		if r.URL.RawQuery != "" {
+			t.Fatalf("query = %q, want empty", r.URL.RawQuery)
+		}
+		searches, ok := body["searches"].([]interface{})
+		if !ok || len(searches) != 1 {
+			t.Fatalf("searches = %#v, want one search", body["searches"])
+		}
+	})
+
+	searches := []map[string]interface{}{{"collection": "books", "q": "phone"}}
+	if _, err := client.Search().MultiGET(searches); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestNewClientWithErrorValidatesBaseURL(t *testing.T) {
 	if _, err := NewClientWithError("://bad"); err == nil {
 		t.Fatal("expected invalid base URL error")

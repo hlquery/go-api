@@ -50,9 +50,12 @@ func (s *Search) Multi(searches []map[string]interface{}) (*Response, error) {
 	return s.client.request("POST", "/multi_search", body)
 }
 
-// MultiGET performs multi-search with query parameters.
-func (s *Search) MultiGET(params map[string]interface{}) (*Response, error) {
-	return s.client.requestWithQueryValues("GET", "/multi_search", nil, params)
+// MultiGET performs multi-search with a GET request body.
+func (s *Search) MultiGET(searches []map[string]interface{}) (*Response, error) {
+	body := map[string]interface{}{
+		"searches": searches,
+	}
+	return s.client.request("GET", "/multi_search", body)
 }
 
 // Global performs a cross-collection search.

@@ -11,6 +11,9 @@ func (s *System) Query() (*Response, error)  { return s.client.request("GET", "/
 func (s *System) SearchConfig() (*Response, error) {
 	return s.client.request("GET", "/search-config", nil)
 }
+func (s *System) ConfigFiles() (*Response, error) {
+	return s.client.request("GET", "/config-files", nil)
+}
 func (s *System) Ready() (*Response, error)   { return s.client.Ready() }
 func (s *System) Ping() (*Response, error)    { return s.client.Ping() }
 func (s *System) Info() (*Response, error)    { return s.client.Info() }
