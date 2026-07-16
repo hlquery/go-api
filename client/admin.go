@@ -52,6 +52,47 @@ type Modules struct {
 	client *Client
 }
 
+// Presets manages named search parameter presets.
+type Presets struct {
+	client *Client
+}
+
+func (p *Presets) List() (*Response, error) {
+	return p.client.request("GET", "/presets", nil)
+}
+
+func (p *Presets) Get(name string) (*Response, error) {
+	if err := requireNonEmpty(name, "preset name"); err != nil {
+		return nil, err
+	}
+	return p.client.request("GET", "/presets/"+encodePathPart(name), nil)
+}
+
+func (p *Presets) Create(name string, params map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(name, "preset name"); err != nil {
+		return nil, err
+	}
+	return p.client.request("POST", "/presets/"+encodePathPart(name), params)
+}
+
+func (p *Presets) Update(name string, params map[string]interface{}) (*Response, error) {
+	if err := requireNonEmpty(name, "preset name"); err != nil {
+		return nil, err
+	}
+	return p.client.request("PUT", "/presets/"+encodePathPart(name), params)
+}
+
+func (p *Presets) Upsert(name string, params map[string]interface{}) (*Response, error) {
+	return p.Update(name, params)
+}
+
+func (p *Presets) Delete(name string) (*Response, error) {
+	if err := requireNonEmpty(name, "preset name"); err != nil {
+		return nil, err
+	}
+	return p.client.request("DELETE", "/presets/"+encodePathPart(name), nil)
+}
+
 func (m *Modules) List() (*Response, error) {
 	return m.client.request("GET", "/modules", nil)
 }

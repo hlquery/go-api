@@ -68,6 +68,17 @@ func (s *Search) GlobalGET(params map[string]interface{}) (*Response, error) {
 	return s.client.requestWithQueryValues("GET", "/search", nil, params)
 }
 
+// SearchAll is an explicit alias for Global and searches a merged result set
+// across all collections. Use the collections parameter to restrict the set.
+func (s *Search) SearchAll(params map[string]interface{}) (*Response, error) {
+	return s.Global(params)
+}
+
+// SearchAllGET is the GET variant of SearchAll.
+func (s *Search) SearchAllGET(params map[string]interface{}) (*Response, error) {
+	return s.GlobalGET(params)
+}
+
 // SQL executes a collection-bound SQL SELECT through the search endpoint.
 func (s *Search) SQL(collection, sql string, params map[string]interface{}) (*Response, error) {
 	if collection == "" {

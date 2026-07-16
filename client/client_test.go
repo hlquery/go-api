@@ -49,6 +49,24 @@ func TestSearchPerformUsesDocumentSearchRoute(t *testing.T) {
 	}
 }
 
+func TestSearchAllUsesGlobalSearchRoute(t *testing.T) {
+	client := testClient(t, func(t *testing.T, r *http.Request, body map[string]interface{}) {
+		if r.Method != "POST" {
+			t.Fatalf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/search" {
+			t.Fatalf("path = %s, want /search", r.URL.Path)
+		}
+		if body["q"] != "research" {
+			t.Fatalf("q = %v, want research", body["q"])
+		}
+	})
+
+	if _, err := client.Search().SearchAll(map[string]interface{}{"q": "research"}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCollectionUpdateUsesServerRoute(t *testing.T) {
 	client := testClient(t, func(t *testing.T, r *http.Request, _ map[string]interface{}) {
 		if r.Method != "POST" {
@@ -113,6 +131,36 @@ func TestConfigFilesUsesCoreRoute(t *testing.T) {
 
 	if _, err := client.ConfigFiles(); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestCacheUsesCoreRoute(t *testing.T) {
+	client := testClient(t, func(t *testing.T, r *http.Request, _ map[string]interface{}) {
+		if r.Method != "GET" || r.URL.Path != "/cache" {
+			t.Fatalf("request = %s %s, want GET /cache", r.Method, r.URL.Path)
+		}
+	})
+
+	if _, err := client.System().Cache(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPresetUpdateUsesEncodedCoreRoute(t *testing.T) {
+	client := testClient(t, func(t *testing.T, r *http.Request, body map[string]interface{}) {
+		if r.Method != "PUT" || r.URL.EscapedPath() != "/presets/daily%2Fresearch" {
+			t.Fatalf("request = %s %s, want PUT /presets/daily%%2Fresearch", r.Method, r.URL.EscapedPath())
+		}
+		if body["query_by"] != "title" {
+			t.Fatalf("query_by = %v, want title", body["query_by"])
+		}
+	})
+
+	if _, err := client.Presets().Update("daily/research", map[string]interface{}{"query_by": "title"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Presets().Get("  "); err == nil {
+		t.Fatal("expected blank preset name to be rejected")
 	}
 }
 

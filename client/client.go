@@ -414,6 +414,11 @@ func (c *Client) ConfigFiles() (*Response, error) {
 	return c.request("GET", "/config-files", nil)
 }
 
+// Cache returns server cache diagnostics.
+func (c *Client) Cache() (*Response, error) {
+	return c.request("GET", "/cache", nil)
+}
+
 // Links lists configured cluster links
 func (c *Client) Links() (*Response, error) {
 	return c.request("GET", "/links", nil)
@@ -537,6 +542,11 @@ func (c *Client) Users() *Users {
 // Modules returns a Modules API client.
 func (c *Client) Modules() *Modules {
 	return &Modules{client: c}
+}
+
+// Presets returns the search presets API.
+func (c *Client) Presets() *Presets {
+	return &Presets{client: c}
 }
 
 // Convenience methods

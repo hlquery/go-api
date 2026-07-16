@@ -14,6 +14,7 @@ func (s *System) SearchConfig() (*Response, error) {
 func (s *System) ConfigFiles() (*Response, error) {
 	return s.client.request("GET", "/config-files", nil)
 }
+func (s *System) Cache() (*Response, error)   { return s.client.request("GET", "/cache", nil) }
 func (s *System) Ready() (*Response, error)   { return s.client.Ready() }
 func (s *System) Ping() (*Response, error)    { return s.client.Ping() }
 func (s *System) Info() (*Response, error)    { return s.client.Info() }

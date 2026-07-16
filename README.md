@@ -131,6 +131,15 @@ We welcome contributions from the community! All contributions must be released 
 - Test and report bugs against the Go client
 - Improve Go-specific documentation and examples
 
+### Search all collections
+
+```go
+result, err := client.Search().SearchAll(map[string]interface{}{"q": "research", "limit": 20})
+selected, err := client.Search().SearchAllGET(map[string]interface{}{"q": "research", "collections": "universities,science"})
+```
+
+`Global` and `GlobalGET` remain available as equivalent names. Results are globally merged and each hit includes `document._collection`.
+
 ### Community
 
 - 📖 [Documentation](https://docs.hlquery.com)
